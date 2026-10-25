@@ -1,0 +1,19 @@
+PROJECT TITLE: SafeHer — Women Safety Support System
+
+ABSTRACT
+SafeHer is a student demonstration web application designed to present basic digital safety-support workflows. It provides a demo SOS alert function, optional browser location capture, a safety check-in form, incident reporting, and an activity history view. The frontend uses HTML, CSS, and JavaScript, while the backend uses Python and FastAPI REST endpoints. The application demonstrates how user input can be submitted to backend endpoints and displayed as activity records.
+
+OBJECTIVES
+1. Provide a simple interface for recording a demo SOS alert.
+2. Demonstrate optional browser geolocation access with user permission.
+3. Allow users to record a safety check-in.
+4. Allow users to submit incident category, description, and optional location.
+5. Display recent activity from the running server session.
+
+TECHNOLOGY STACK
+- Frontend: HTML5, CSS3, JavaScript
+- Backend: Python, FastAPI, Uvicorn
+- Data storage: in-memory list for demonstration
+
+LIMITATIONS
+The application is a prototype for academic demonstration. It does not contact emergency services, send SMS messages, make telephone calls, or notify trusted contacts. Data is not persisted after the backend process restarts. It should not be relied upon for real-world emergencies.
