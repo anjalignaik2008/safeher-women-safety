@@ -20,7 +20,7 @@ function toast(message) {
 async function request(url, options = {}) {
   const response = await fetch(url, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', ...options.headers },
   });
   let data;
   try { data = await response.json(); } catch { data = {}; }
@@ -115,7 +115,8 @@ function renderHistory(items) {
     if (details.location) extra.push(`<strong>Location:</strong> ${escapeText(details.location)}`);
     if (details.latitude != null && details.longitude != null) extra.push(`<strong>Coordinates:</strong> ${escapeText(details.latitude)}, ${escapeText(details.longitude)}`);
     if (details.description) extra.push(`<span>${escapeText(details.description)}</span>`);
-    return `<article class="history-item"><div class="history-item-top"><span class="history-type">${escapeText(item.type)}</span><time class="history-time">${escapeText(formatTime(item.timestamp))}</time></div><p>${escapeText(item.message)}</p>${extra.length ? `<p class="history-detail">${extra.join('<br>')}</p>` : ''}</article>`;
+    const detailMarkup = extra.length ? '<p class="history-detail">' + extra.join('<br>') + '</p>' : '';
+    return `<article class="history-item"><div class="history-item-top"><span class="history-type">${escapeText(item.type)}</span><time class="history-time">${escapeText(formatTime(item.timestamp))}</time></div><p>${escapeText(item.message)}</p>${detailMarkup}</article>`;
   }).join('');
 }
 
@@ -161,7 +162,7 @@ function toast(message) {
 async function request(url, options = {}) {
   const response = await fetch(url, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', ...options.headers },
   });
   let data;
   try { data = await response.json(); } catch { data = {}; }
@@ -256,7 +257,8 @@ function renderHistory(items) {
     if (details.location) extra.push(`<strong>Location:</strong> ${escapeText(details.location)}`);
     if (details.latitude != null && details.longitude != null) extra.push(`<strong>Coordinates:</strong> ${escapeText(details.latitude)}, ${escapeText(details.longitude)}`);
     if (details.description) extra.push(`<span>${escapeText(details.description)}</span>`);
-    return `<article class="history-item"><div class="history-item-top"><span class="history-type">${escapeText(item.type)}</span><time class="history-time">${escapeText(formatTime(item.timestamp))}</time></div><p>${escapeText(item.message)}</p>${extra.length ? `<p class="history-detail">${extra.join('<br>')}</p>` : ''}</article>`;
+    const detailMarkup = extra.length ? '<p class="history-detail">' + extra.join('<br>') + '</p>' : '';
+    return `<article class="history-item"><div class="history-item-top"><span class="history-type">${escapeText(item.type)}</span><time class="history-time">${escapeText(formatTime(item.timestamp))}</time></div><p>${escapeText(item.message)}</p>${detailMarkup}</article>`;
   }).join('');
 }
 
@@ -272,12 +274,131 @@ async function refreshHistory() {
 
 $('refreshButton').addEventListener('click', refreshHistory);
 
-// Load history when the page opens
-refreshHistory();
-
-// Automatically update alert history every 3 seconds
+// Authentication loads history after validating the session.
+let safeherSignedIn = false;
 setInterval(() => {
-  refreshHistory();
-}, 3000);
+  if (safeherSignedIn) void refreshHistory();
+}, 5000);
+
+function setAuthStatus(message, kind = '') {
+  const element = $('authStatus');
+  element.textContent = message;
+  element.classList.remove('success', 'error');
+  if (kind) element.classList.add(kind);
+}
+
+function setAuthMode(mode) {
+  document.querySelectorAll('[data-auth-mode]').forEach((tab) => {
+    const active = tab.dataset.authMode === mode;
+    tab.classList.toggle('is-active', active);
+    tab.setAttribute('aria-selected', String(active));
+  });
+  $('loginForm').hidden = mode !== 'login';
+  $('registerForm').hidden = mode !== 'register';
+  $('joinForm').hidden = mode !== 'join';
+  let title = 'Sign in to SafeHer';
+  if (mode === 'register') title = 'Create your owner account';
+  if (mode === 'join') title = 'Join as a trusted contact';
+  $('authTitle').textContent = title;
+  setAuthStatus('');
+}
+
+async function submitAuth(event, form, endpoint) {
+  event.preventDefault();
+  const payload = Object.fromEntries(new FormData(form).entries());
+  const button = form.querySelector('button[type="submit"]');
+  button.disabled = true;
+  setAuthStatus('Please wait…');
+  try {
+    await request(endpoint, { method: 'POST', body: JSON.stringify(payload) });
+    window.location.reload();
+  } catch (error) {
+    setAuthStatus(error.message, 'error');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function showAuthenticated(user) {
+  safeherSignedIn = true;
+  $('authPanel').hidden = true;
+  $('appContent').hidden = false;
+  $('appNavigation').hidden = false;
+  $('sessionControls').hidden = false;
+  $('accountLabel').textContent = `${user.name} · ${user.role === 'contact' ? 'Trusted Contact' : 'Owner'}`;
+
+  const isContact = user.role === 'contact';
+  $('safety').hidden = isContact;
+  $('incident').hidden = isContact;
+  $('trustedContactPanel').hidden = isContact;
+  document.querySelector('a[href="#safety"]').hidden = isContact;
+  document.querySelector('a[href="#incident"]').hidden = isContact;
+  $('ownerExploreLink').hidden = isContact;
+  if (isContact) {
+    document.querySelector('.hero-description').textContent = `${user.ownerName} shares safety activity with you.`;
+  }
+  document.querySelector('.lower-grid').classList.toggle('contact-view', isContact);
+  $('historyDescription').textContent = isContact
+    ? `${user.ownerName}'s shared activity.`
+    : 'Review alerts and reports recorded by this account.';
+  void refreshHistory();
+}
+
+document.querySelectorAll('[data-auth-mode]').forEach((tab) => {
+  tab.addEventListener('click', () => setAuthMode(tab.dataset.authMode));
+});
+$('loginForm').addEventListener('submit', (event) => submitAuth(event, $('loginForm'), '/api/auth/login'));
+$('registerForm').addEventListener('submit', (event) => submitAuth(event, $('registerForm'), '/api/auth/register'));
+$('joinForm').addEventListener('submit', (event) => submitAuth(event, $('joinForm'), '/api/auth/join'));
+
+$('logoutButton').addEventListener('click', async () => {
+  try {
+    await request('/api/auth/logout', { method: 'POST' });
+    window.location.reload();
+  } catch (error) {
+    toast(error.message);
+  }
+});
+
+$('createInviteButton').addEventListener('click', async () => {
+  const button = $('createInviteButton');
+  button.disabled = true;
+  setStatus('inviteStatus', 'Creating invite…');
+  try {
+    const invite = await request('/api/contacts/invite', { method: 'POST' });
+    $('inviteCodeDisplay').textContent = invite.code;
+    $('inviteResult').hidden = false;
+    setStatus('inviteStatus', `Code expires ${formatTime(invite.expiresAt)}. It can be used once.`, 'success');
+  } catch (error) {
+    setStatus('inviteStatus', error.message, 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$('copyInviteButton').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText($('inviteCodeDisplay').textContent);
+    setStatus('inviteStatus', 'Invite code copied.', 'success');
+  } catch {
+    setStatus('inviteStatus', 'Copy was blocked. Select and copy the code manually.', 'error');
+  }
+});
+
+async function loadAuthenticatedSession() {
+  try {
+    const data = await request('/api/auth/me');
+    showAuthenticated(data.user);
+  } catch (error) {
+    $('authPanel').hidden = false;
+    $('appContent').hidden = true;
+    $('appNavigation').hidden = true;
+    $('sessionControls').hidden = true;
+    setAuthMode('login');
+    if (error.message !== 'Please sign in to continue.') setAuthStatus(error.message, 'error');
+  }
+}
+
+await loadAuthenticatedSession();
 
 

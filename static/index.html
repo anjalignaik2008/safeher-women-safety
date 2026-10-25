@@ -6,41 +6,58 @@
   <meta name="description" content="SafeHer women safety support system demo">
   <title>SafeHer | Women Safety Support System</title>
   <link rel="stylesheet" href="/static/style.css?v=2">
+  <link rel="stylesheet" href="/static/auth.css?v=1">
 </head>
 <body>
   <header class="site-header">
     <div class="container header-content">
       <a class="brand" href="#home" aria-label="SafeHer home"><span class="brand-icon">♡</span><span><strong>SafeHer</strong><small>Women Safety Support System</small></span></a>
-      <nav class="navigation" aria-label="Main navigation"><a href="#home">Home</a><a href="#safety">Safety Tools</a><a href="#incident">Report Incident</a></nav>
+      <nav class="navigation" aria-label="Main navigation" id="appNavigation" hidden><a href="#home">Home</a><a href="#safety">Safety Tools</a><a href="#incident">Report Incident</a></nav>
+      <div id="sessionControls" class="session-controls" hidden><span id="accountLabel"></span><button type="button" id="logoutButton" class="button button-secondary">Sign out</button></div>
     </div>
   </header>
   <main id="home" class="container">
+    <section id="authPanel" class="auth-panel panel" aria-labelledby="authTitle">
+      <p class="eyebrow">SAFEHER ACCOUNT</p><h1 id="authTitle">Sign in to SafeHer</h1><p class="auth-description">Owners manage safety tools. Trusted contacts can sign in from their own devices to view linked activity.</p>
+      <div class="auth-tabs" role="tablist" aria-label="Account access">
+        <button type="button" class="auth-tab is-active" data-auth-mode="login" role="tab" aria-selected="true">Sign in</button>
+        <button type="button" class="auth-tab" data-auth-mode="register" role="tab" aria-selected="false">Create owner account</button>
+        <button type="button" class="auth-tab" data-auth-mode="join" role="tab" aria-selected="false">Join as contact</button>
+      </div>
+      <form id="loginForm" class="auth-form"><label for="loginEmail">Email</label><input id="loginEmail" name="email" type="email" autocomplete="email" required maxlength="254"><label for="loginPassword">Password</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" required maxlength="128"><button class="button button-primary" type="submit">Sign in</button></form>
+      <form id="registerForm" class="auth-form" hidden><label for="ownerName">Your name</label><input id="ownerName" name="name" autocomplete="name" required maxlength="80"><label for="ownerEmail">Email</label><input id="ownerEmail" name="email" type="email" autocomplete="email" required maxlength="254"><label for="ownerPassword">Password (12 characters minimum)</label><input id="ownerPassword" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><button class="button button-primary" type="submit">Create owner account</button></form>
+      <form id="joinForm" class="auth-form" hidden><label for="inviteCode">Trusted Contact invite code</label><input id="inviteCode" name="code" autocomplete="off" required maxlength="40"><label for="contactName">Your name</label><input id="contactName" name="name" autocomplete="name" required maxlength="80"><label for="contactEmail">Email</label><input id="contactEmail" name="email" type="email" autocomplete="email" required maxlength="254"><label for="contactPassword">Password (12 characters minimum)</label><input id="contactPassword" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><button class="button button-primary" type="submit">Join as trusted contact</button></form>
+      <output id="authStatus" class="status-message" aria-live="polite"></output>
+    </section>
+    <div id="appContent" hidden>
     <section class="hero">
-      <div class="hero-content"><p class="eyebrow">YOUR SAFETY MATTERS</p><h1>Your safety.<br>Our priority.</h1><p class="hero-description">Simple safety tools to record SOS alerts, check in with your safety status, and report incidents.</p><a class="primary-link" href="#safety">Explore Safety Tools</a></div>
+      <div class="hero-content"><p class="eyebrow">YOUR SAFETY MATTERS</p><h1>Your safety.<br>Our priority.</h1><p class="hero-description">Simple safety tools to record SOS alerts, check in with your safety status, and report incidents.</p><a id="ownerExploreLink" class="primary-link" href="#safety">Explore Safety Tools</a></div>
       <div class="hero-symbol" aria-hidden="true"><div class="hero-heart">♡</div><p>Stay aware. Stay connected.</p></div>
     </section>
     <section id="safety" class="section">
       <div class="section-heading"><p class="eyebrow">SAFETY CENTER</p><h2>Safety Tools</h2><p>Use the tools below to record an alert or update your safety status.</p></div>
       <div class="features-grid">
-        <article class="feature-card sos-card"><div class="feature-icon" aria-hidden="true">🆘</div><h3>SOS Emergency Alert</h3><p>Record a demo emergency alert and optionally include your browser location.</p><button type="button" id="sosButton" class="button button-danger">Activate SOS</button><p id="sosStatus" class="status-message" role="status">No SOS alert activated.</p></article>
-        <article class="feature-card"><div class="feature-icon" aria-hidden="true">📍</div><h3>My Location</h3><p>Request your current browser location to include it with an SOS demo alert.</p><button type="button" id="locationButton" class="button button-secondary">Get My Location</button><p id="locationStatus" class="status-message" role="status">Location has not been requested.</p></article>
-        <article class="feature-card"><div class="feature-icon" aria-hidden="true">✓</div><h3>Safety Check-in</h3><p>Record a check-in to indicate that you are safe.</p><form id="checkinForm"><label for="checkinName">Your name (optional)</label><input type="text" id="checkinName" name="name" placeholder="Enter your name" maxlength="80"><button type="submit" class="button button-primary">I Am Safe</button></form><p id="checkinStatus" class="status-message" role="status"></p></article>
+        <article class="feature-card sos-card"><div class="feature-icon" aria-hidden="true">🆘</div><h3>SOS Emergency Alert</h3><p>Record a demo emergency alert and optionally include your browser location.</p><button type="button" id="sosButton" class="button button-danger">Activate SOS</button><output id="sosStatus" class="status-message">No SOS alert activated.</output></article>
+        <article class="feature-card"><div class="feature-icon" aria-hidden="true">📍</div><h3>My Location</h3><p>Request your current browser location to include it with an SOS demo alert.</p><button type="button" id="locationButton" class="button button-secondary">Get My Location</button><output id="locationStatus" class="status-message">Location has not been requested.</output></article>
+        <article class="feature-card"><div class="feature-icon" aria-hidden="true">✓</div><h3>Safety Check-in</h3><p>Record a check-in to indicate that you are safe.</p><form id="checkinForm"><label for="checkinName">Your name (optional)</label><input type="text" id="checkinName" name="name" placeholder="Enter your name" maxlength="80"><button type="submit" class="button button-primary">I Am Safe</button></form><output id="checkinStatus" class="status-message"></output></article>
       </div>
     </section>
+    <section id="trustedContactPanel" class="contact-invite-panel panel" hidden><div class="panel-heading"><p class="eyebrow">SHARED ACCESS</p><h2>Trusted Contact</h2><p>Create a one-time invite code. It expires after 24 hours and can be used once.</p></div><button type="button" id="createInviteButton" class="button button-primary">Create invite code</button><div id="inviteResult" class="invite-result" hidden><code id="inviteCodeDisplay"></code><button type="button" id="copyInviteButton" class="button button-secondary">Copy invite code</button></div><output id="inviteStatus" class="status-message" aria-live="polite"></output></section>
     <section class="lower-grid">
       <article id="incident" class="panel incident-panel"><div class="panel-heading"><p class="eyebrow">INCIDENT REPORTING</p><h2>Report an Incident</h2><p>Enter details to record a safety incident in this demo project.</p></div>
         <form id="incidentForm"><div class="form-group"><label for="category">Incident Category</label><select id="category" name="category" required><option value="">Select a category</option><option value="Harassment">Harassment</option><option value="Stalking">Stalking</option><option value="Unsafe Location">Unsafe Location</option><option value="Verbal Abuse">Verbal Abuse</option><option value="Physical Threat">Physical Threat</option><option value="Other">Other</option></select></div>
           <div class="form-group"><label for="description">Incident Description</label><textarea id="description" name="description" rows="4" placeholder="Describe what happened..." maxlength="2000" required></textarea></div>
           <div class="form-group"><label for="incidentLocation">Incident Location (optional)</label><input type="text" id="incidentLocation" name="location" placeholder="Enter area or location" maxlength="250"></div>
-          <button type="submit" class="button button-primary">Submit Incident Report</button><p id="reportStatus" class="status-message" role="status" aria-live="polite"></p>
+          <button type="submit" class="button button-primary">Submit Incident Report</button><output id="reportStatus" class="status-message" aria-live="polite"></output>
         </form>
       </article>
-      <article class="panel history-panel"><div class="panel-heading"><p class="eyebrow">ACTIVITY</p><h2>Alert History</h2><p>Review alerts and reports recorded by this running demo.</p></div><div class="history-actions"><button type="button" id="refreshButton" class="button button-secondary">Refresh History</button></div><div id="alertHistory" class="alert-history" aria-live="polite"><p class="empty-state">Loading activity…</p></div></article>
+      <article class="panel history-panel"><div class="panel-heading"><p class="eyebrow">ACTIVITY</p><h2>Alert History</h2><p id="historyDescription">Review alerts and reports recorded by this running demo.</p></div><div class="history-actions"><button type="button" id="refreshButton" class="button button-secondary">Refresh History</button></div><div id="alertHistory" class="alert-history" aria-live="polite"><p class="empty-state">Loading activity…</p></div></article>
     </section>
-    <section class="notice"><strong>Project Demo Notice</strong><p>This student demo records information in the running application only. It does not send SMS, make phone calls, or contact police, emergency services, or trusted contacts. Records are stored in memory and reset when the server restarts. Do not rely on this demo in a real emergency.</p></section>
+    <section class="notice"><strong>Project Demo Notice</strong><p>This student demo records information in the application only. It does not send SMS, make phone calls, or contact police, emergency services, or trusted contacts. Do not rely on this demo in a real emergency.</p></section>
+    </div>
   </main>
   <footer class="site-footer"><div class="container"><p>© 2026 SafeHer — Women Safety Support System</p><p>Built as a Student SPI Project</p></div></footer>
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script src="/static/app.js" defer></script>
+  <output id="toast" class="toast" aria-live="polite" hidden></output>
+  <script type="module" src="/static/app.js?v=3"></script>
 </body>
 </html>
